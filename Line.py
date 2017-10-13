@@ -139,8 +139,8 @@ class Line:
             fitx = self.best_fit[0]*ploty**2 + self.best_fit[1]*ploty + self.best_fit[2]
             
         # Define conversions in x and y from pixels space to meters
-        ym_per_pix = 30/720 # meters per pixel in y dimension
-        xm_per_pix = 3.7/700 # meters per pixel in x dimension
+        ym_per_pix = 20/720 # meters per pixel in y dimension  #30/720
+        xm_per_pix = 4.0/700 # meters per pixel in x dimension 
         
         # Fit new polynomials to x,y in world space
         fit_cr = np.polyfit(ploty*ym_per_pix, fitx*xm_per_pix, 2)
@@ -187,6 +187,14 @@ class Lines:
             self.theLines.append(Line(hand=h, nwindows=nwindows, margin=margin, minpix=minpix, nIterations=nIterations))
         self.oldSanityChecks=[]
         self.nIterations=nIterations
+        self.refresh=int('0x02', base=16)
+        self.oldCurvature=0
+        self.oldPosition=0
+
+    def ror(self):
+        if self.refresh & 1==1: self.refresh=self.refresh<<8
+        else: self.refresh=self.refresh>>1
+        return self.refresh&1
 
     def getLines(self,img):
         for l in self.theLines:
@@ -234,7 +242,7 @@ class Lines:
 
     def getCarPosition(self):
         xm_per_pix = 3.7/700
-        centre=1280/2.
+        centre=550
         deviation = ((centre - self.theLines[0].current_fit[2]) - (self.theLines[1].current_fit[2]-centre))/2. * xm_per_pix
         return deviation
 
@@ -249,6 +257,12 @@ class Lines:
         std=np.std(distances)
         if False in map(lambda d: abs(d-m)<3*std, distances): return False
         return True
+
+    def getInfo(self,img):
+        if self.ror():
+            self.oldCurvature=self.getCurvature(img)
+            self.oldPosition=self.getCarPosition()
+        return self.oldCurvature, self.oldPosition
             
     def sanityCheck(self,img):
         if abs(self.getLineSeparation()-3.7)>0.5: return False

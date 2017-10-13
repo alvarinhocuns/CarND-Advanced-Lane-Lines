@@ -4,8 +4,6 @@ from Line import *
 from moviepy.editor import VideoFileClip
 from IPython.display import HTML
 
-refresh=int('0x02', base=16)
-
 #Points to warp and uwarp images
 src = np.float32([[740,480],[1012,650],[308,650],[550,480]])
 #src = np.float32([[668,440],[1012,650],[308,650],[610,440]])
@@ -17,11 +15,6 @@ rc,carPosition=0,0
 mtx, dist, rvecs, tvecs = Calibrate()
 
 lines = Lines()
-
-def ror(dat):
-    if dat & 1==1: dat=dat<<8
-    else: dat=dat>>1
-    return dat
 
 def processImage(image):
     #Undistort image
@@ -50,15 +43,16 @@ def processImage(image):
 
     # Combine the result with the original image
     result = cv2.addWeighted(undistort, 1, newwarp, 0.3, 0)
-    """
+    
     #write radius and deviation from center in the image:
     #refresh=ror(refresh)
-    rc=round(lines.getCurvature(imgWarped),1)
-    carPosition=round(lines.getCarPosition(),3)
+    rc,carPosition=lines.getInfo(imgWarped)
+    rc=round(rc,1)
+    carPosition=round(carPosition,3)
     font = cv2.FONT_HERSHEY_COMPLEX_SMALL
-    cv2.putText(result,'Radius of curvature: '+str(rc),(10,100), font, 2,(255,255,255),2,cv2.LINE_AA)
-    cv2.putText(result,'Car position: '+str(carPosition),(10,150), font, 2,(255,255,255),2,cv2.LINE_AA)
-    """
+    cv2.putText(result,'Radius of curvature: '+str(rc)+' m',(10,100), font, 2,(255,255,255),2,cv2.LINE_AA)
+    cv2.putText(result,'Car position: '+str(carPosition)+' m',(10,150), font, 2,(255,255,255),2,cv2.LINE_AA)
+    
     #plt.imshow(result)
     #plt.show()
     
